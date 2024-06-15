@@ -1,12 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simplecallflutter/utils/supabase_service.dart';
-import 'package:simplecallflutter/utils/user_connections.dart';
+import 'package:simplecallflutter/utils/user.dart';
 
+var prefs;
+var profile;
 void main() async {
   await dotenv.load();
   SupabaseService.initSupabase();
-  UserConnections.login();
+  prefs = await SharedPreferences.getInstance();
+  await User.login();
+  profile = jsonDecode(await prefs.getString("profile"));
   runApp(const MyApp());
 }
 
@@ -36,15 +43,15 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  
 
   void _incrementCounter() {
     setState(() {
       _counter++;
     });
   }
-  void login() {
-    print("hi");
-    UserConnections.getConnectionProfiles();
+  void login() async {
+    print(await User.getConnectionProfiles());
   }
 
   @override
@@ -65,6 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            Text(profile== null ? "not loaded" : profile['connect_string'], style: Theme.of(context).textTheme.headlineMedium,),
             ButtonBar(
               alignment: MainAxisAlignment.center,
               children: <Widget>[
