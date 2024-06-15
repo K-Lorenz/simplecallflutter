@@ -5,21 +5,30 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simplecallflutter/utils/supabase_service.dart';
 import 'package:simplecallflutter/utils/user.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 var prefs;
-var profile;
+var _profile;
 void main() async {
   await dotenv.load();
-  SupabaseService.initSupabase();
+  await SupabaseService.initSupabase();
   prefs = await SharedPreferences.getInstance();
-  await User.login();
-  profile = jsonDecode(await prefs.getString("profile"));
+  if(Supabase.instance.client.auth.currentUser == null){
+    await UserManager.login();
+  }
+  if(prefs.get("profile")==null){
+    await Supabase.instance.client.from('Profiles').insert([{'id': Supabase.instance.client.auth.currentUser!.id}]).select().then((value) async{
+      await prefs.setString("profile", jsonEncode(value[0]));
+    }).catchError((error){
+      print(error);
+    });
+  }
+  _profile = jsonDecode(await prefs.getString("profile"));
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -42,17 +51,20 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  
 
   void _incrementCounter() {
+    UserManager.createConnection("AEMCZR");
+  }
+  void checkConnections() async {
+    print(await UserManager.getConnectionProfiles());
+  }
+  void swapType() async{
+    await UserManager.swapType();
     setState(() {
-      _counter++;
+      _profile = jsonDecode(prefs.getString("profile")!);
     });
   }
-  void login() async {
-    print(await User.getConnectionProfiles());
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -65,20 +77,23 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            Text(profile== null ? "not loaded" : profile['connect_string'], style: Theme.of(context).textTheme.headlineMedium,),
+            Text(_profile== null ? "not loaded" : _profile['id'], style: Theme.of(context).textTheme.headlineMedium,),
+            Text(_profile== null ? "not loaded" : _profile['type'], style: Theme.of(context).textTheme.headlineMedium,),
             ButtonBar(
               alignment: MainAxisAlignment.center,
               children: <Widget>[
                 ElevatedButton(
-                  onPressed: login,
-                  child: const Icon(Icons.add),
+                  onPressed: checkConnections,
+                  child: const Text("Check Connection Profiles"),
+                ),
+              ],
+            ),
+            ButtonBar(
+              alignment: MainAxisAlignment.center,
+              children: <Widget>[
+                ElevatedButton(
+                  onPressed: swapType,
+                  child: const Text("Swap Type"),
                 ),
               ],
             ),

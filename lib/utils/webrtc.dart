@@ -46,6 +46,5 @@ class WebRTCUtil {
 
   static void handleSignalingMessages(){
     //listen to signaling messages from supabase
-    final channel = SupabaseService.supabaseClient.channel('webrtc');
   }
 }
