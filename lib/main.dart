@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simplecallflutter/utils/supabase_service.dart';
 import 'package:simplecallflutter/utils/user.dart';
+import 'package:simplecallflutter/utils/webrtc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 var prefs;
@@ -57,6 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   void checkConnections() async {
     print(await UserManager.getConnectionProfiles());
+    await WebRTCUtil().initWebRTC("b9181d88-9f15-4c48-ab26-80ee41777316");
   }
   void swapType() async{
     await UserManager.swapType();
