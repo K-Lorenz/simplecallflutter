@@ -22,8 +22,8 @@ class WebRTCUtil {
     });
     _peerConnection = await createPeerConnection(_configuration);
 
-    _localStream!.getTracks().forEach((track) {
-      _peerConnection!.addTrack(track, _localStream!);
+    _localStream!.getTracks().forEach((track) async{
+      await _peerConnection!.addTrack(track, _localStream!);
     });
     //True for incoming calls, False for outgoing calls
     if(incomingOffer!=null){
@@ -34,17 +34,18 @@ class WebRTCUtil {
           schema: 'public',
           table: 'Signaling',
           filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'calleeId', value: Supabase.instance.client.auth.currentUser!.id),
-          callback: (payload){
+          callback: (payload)async{
             if(payload.newRecord['signal_type']=="IceCandidate"){
               String candidate =payload.newRecord["data"]['candidate'];
               String sdpMid =  payload.newRecord["data"]['id'];
               int sdpMLineIndex = payload.newRecord["data"]['label'];
-              _peerConnection!.addCandidate(RTCIceCandidate(candidate, sdpMid, sdpMLineIndex));
+              await _peerConnection!.addCandidate(RTCIceCandidate(candidate, sdpMid, sdpMLineIndex));
             }
           })
         .subscribe();
 
       await _peerConnection!.setRemoteDescription(RTCSessionDescription(incomingOffer["sdp"], incomingOffer["type"]));
+      print((await _peerConnection!.getRemoteDescription())!.toMap());
       RTCSessionDescription answer = await _peerConnection!.createAnswer();
       _peerConnection!.setLocalDescription(answer);
       SupabaseService.sendAnswer(answer.toMap(),calleeId);
@@ -77,8 +78,7 @@ class WebRTCUtil {
         ).subscribe();
 
         RTCSessionDescription offer = await _peerConnection!.createOffer();
-        await _peerConnection!.setLocalDescription(offer);
-        print("hola");
+        print(offer.toMap());
         await Supabase.instance.client.from('Signaling').insert({
           "callee_id": calleeId,
           "caller_id": Supabase.instance.client.auth.currentUser!.id,

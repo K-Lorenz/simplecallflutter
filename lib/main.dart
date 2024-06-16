@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -9,16 +8,15 @@ import 'package:simplecallflutter/utils/user.dart';
 import 'package:simplecallflutter/utils/webrtc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-var prefs;
 var _profile;
+var prefs;
 void main() async {
   await dotenv.load();
   await SupabaseService.initSupabase();
   prefs = await SharedPreferences.getInstance();
   if(Supabase.instance.client.auth.currentUser == null){
     await UserManager.login();
-  }
-  if(prefs.get("profile")==null){
+  }  if(prefs.get("profile")==null){
     await Supabase.instance.client.from('Profiles').insert([{'id': Supabase.instance.client.auth.currentUser!.id}]).select().then((value) async{
       await prefs.setString("profile", jsonEncode(value[0]));
     }).catchError((error){
@@ -26,6 +24,22 @@ void main() async {
     });
   }
   _profile = jsonDecode(await prefs.getString("profile"));
+  Supabase.instance.client
+      .channel("ReceivingCalls")
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'Signaling',
+        //filter missing for ID
+        callback: (payload) async{
+          if(payload.newRecord['signal_type']=="CallRequest"){
+            print("test");
+            await WebRTCUtil().initWebRTC(payload.newRecord['caller_id'],payload.newRecord['data']);
+          }
+        }
+      )
+      .subscribe();
+    
   runApp(const MyApp());
 }
 
@@ -59,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   void checkConnections() async {
     print(await UserManager.getConnectionProfiles());
-    await WebRTCUtil().initWebRTC("b9181d88-9f15-4c48-ab26-80ee41777316");
+    await WebRTCUtil().initWebRTC("a8cd4ed8-303e-4f4c-a4f1-f549f396012f");
   }
   void swapType() async{
     await UserManager.swapType();

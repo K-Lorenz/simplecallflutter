@@ -20,12 +20,12 @@ class SupabaseService {
   }
   static Future<void> sendAnswer(Map<dynamic, String> answer, String calleeId) async {
     Map<String, dynamic> payload = {
-      "callee_Id": calleeId,
       "caller_id": Supabase.instance.client.auth.currentUser!.id,
+      "callee_Id": calleeId,
       "signal_type": "CallAnswer",
       "data": answer
     };
-    await Supabase.instance.client.from('WebRTC').insert(payload);
+    await Supabase.instance.client.from('Signaling').insert(payload);
   }
   static Future<void> sendCall(String calleeId, Map<dynamic, String> sdpOffer) async {
     Map<String, dynamic> payload = {
@@ -34,6 +34,6 @@ class SupabaseService {
       "signal_type": "CallRequest",
       "data": sdpOffer
     };
-    await Supabase.instance.client.from('WebRTC').insert(payload);
+    await Supabase.instance.client.from('Signaling').insert(payload);
   }
 }
