@@ -1,7 +1,7 @@
 
 
 import 'dart:convert';
-
+import 'dart:math';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simplecallflutter/main.dart';
@@ -78,7 +78,8 @@ class UserManager{
     var avatarUrl = "";
       final bytes = await avatar.readAsBytes();
       final fileExt = avatar.path.split('.').last;
-      final fileName = '${profileJson['id']}.$fileExt';
+      final random  = Random().nextInt(9999999);
+      final fileName = '${profileJson['id']}$random.$fileExt';
       await Supabase.instance.client.storage.from('avatars').uploadBinary(fileName, bytes, fileOptions: FileOptions(contentType: avatar.mimeType)).then((value){
         print(value);
       }).catchError((error){
@@ -87,7 +88,7 @@ class UserManager{
       avatarUrl = await Supabase.instance.client.storage.from('avatars').createSignedUrl(fileName, 60*60*24*365*10);
       //upload image to storage
       //get url
-    await Supabase.instance.client.from('Profiles').update({"full_name": fullName, "avatar": avatarUrl}).eq('id', profileJson['id']).then((value){
+    await Supabase.instance.client.from('Profiles').update({"full_name": fullName, "avatar_url": avatarUrl}).eq('id', profileJson['id']).then((value){
       print(value);
     }).catchError((error){
       print(error);
