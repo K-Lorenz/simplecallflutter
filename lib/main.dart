@@ -92,10 +92,10 @@ class _MyHomePageState extends State<MyHomePage> {
     await Supabase.instance.client.from('Profiles').select('*').eq('id', Supabase.instance.client.auth.currentUser!.id).then((value) async{
       await prefs.setString("profile", jsonEncode(value[0]));
       setState((){
-        _profile = jsonEncode(value[0]);
+        _profile = value[0];
       });
+      print(value[0]);
     });
-    
   }
 
 
